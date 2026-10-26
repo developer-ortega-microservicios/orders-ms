@@ -41,7 +41,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       const totalAmount = createOrderDto.items.reduce((acc, orderItem) => {
         const price = products.find(product => product.id === orderItem.productId,).price;
 
-        return price * orderItem.quantity;
+        return acc + price * orderItem.quantity;
       }, 0);
 
       const totalItems = createOrderDto.items.reduce((acc, orderItem) => {
@@ -55,17 +55,36 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
           totalItems: totalItems,
           OrderItem: {
             createMany: {
-              data: [
-                
-              ]
+              data: createOrderDto.items.map((orderItem) => ({
+                price: products.find(product => product.id === orderItem.productId).price,
+                productId: orderItem.productId,
+                quantity: orderItem.quantity
+              }))
+            }
+          }
+        },
+        include: {
+          OrderItem: {
+            select: {
+              price: true,
+              quantity: true,
+              productId: true
             }
           }
         }
-      })
+      });
 
-
+      return {
+        ...order,
+        OrderItem: order.OrderItem.map((orderItem) => ({
+          ...orderItem,
+          name: products.find(product => product.id === orderItem.productId)
+            .name
+        }))
+      }
 
     } catch (error) {
+      this.logger.error(error);
       throw new RpcException({
         status: HttpStatus.BAD_REQUEST,
         message: 'Check logs'
