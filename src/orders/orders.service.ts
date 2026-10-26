@@ -5,6 +5,7 @@ import { envs } from '../config/envs.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
+import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -66,6 +67,23 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     }
 
     return order;
+  }
+
+  async changeStatus(changeOrderStatusDto: ChangeOrderStatusDto){
+
+    const { id, status } = changeOrderStatusDto;
+
+    const order = await this.findOne(id);
+
+    if(order.status === status){
+      return order;
+    }
+
+    return this.order.update({
+      where: { id },
+      data: { status: status }
+    })
+
   }
 
   
