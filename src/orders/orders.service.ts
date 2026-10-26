@@ -1,18 +1,22 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { envs } from '../config/envs.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
+import { PRODUCT_SERVICE } from '../config/service.js';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
 
   private readonly logger = new Logger('OrdersService');
 
-  constructor() {
+  constructor(
+    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy
+  ) {
     const adapter = new PrismaPg({ connectionString: envs.databaseUrl });
     super({ adapter });
   }
@@ -22,8 +26,13 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     this.logger.log('Database Connected')
   }
 
-  create(createOrderDto: CreateOrderDto) {
-    return this.order.create({ data: createOrderDto })
+  async create(createOrderDto: CreateOrderDto) {
+    const ids = [5,6];
+    const products = await firstValueFrom(
+      this.productsClient.send({cmd: 'validate_product'}, ids)
+    )
+    return products;
+    
   }
 
   async findAll(orderPaginationDto: OrderPaginationDto) {
