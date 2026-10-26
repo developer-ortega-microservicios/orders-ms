@@ -1,9 +1,10 @@
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto.js';
-import { PrismaClient } from '../generated/prisma/client.js';
+import { RpcException } from '@nestjs/microservices';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { envs } from '../config/envs.js';
-import { RpcException } from '@nestjs/microservices';
+import { PrismaClient } from '../generated/prisma/client.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
+import { OrderPaginationDto } from './dto/order-pagination.dto.js';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -24,8 +25,31 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
     return this.order.create({ data: createOrderDto })
   }
 
-  findAll() {
-    return this.order.findMany({})
+  async findAll(orderPaginationDto: OrderPaginationDto) {
+
+    const totalPages = await this.order.count({
+      where: {
+        status: orderPaginationDto.status
+      }
+    })
+
+    const currentPage = orderPaginationDto.page;
+    const perPage = orderPaginationDto.limit;
+    
+    return {
+      data: await this.order.findMany({
+        skip: ( currentPage - 1 ) * perPage,
+        take: perPage,
+        where: {
+          status: orderPaginationDto.status
+        }
+      }),
+      meta: {
+        total: totalPages,
+        page: currentPage,
+        lastPage: Math.ceil( totalPages / perPage )
+      }
+    }
   }
 
   async findOne(id: string) {
