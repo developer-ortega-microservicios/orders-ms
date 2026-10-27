@@ -1,13 +1,13 @@
 import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { firstValueFrom } from 'rxjs';
 import { envs } from '../config/envs.js';
+import { NATS_SERVICE } from '../config/service.js';
 import { PrismaClient } from '../generated/prisma/client.js';
+import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
-import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
-import { PRODUCT_SERVICE } from '../config/service.js';
-import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -15,7 +15,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('OrdersService');
 
   constructor(
-    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy
   ) {
     const adapter = new PrismaPg({ connectionString: envs.databaseUrl });
     super({ adapter });
@@ -34,7 +34,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       const productIds = createOrderDto.items.map(item => item.productId)
 
       const products: any[] = await firstValueFrom(
-        this.productsClient.send({ cmd: 'validate_product' }, productIds)
+        this.client.send({ cmd: 'validate_product' }, productIds)
       );
 
       // Calculo de los valores
@@ -145,7 +145,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     const productIds = order.OrderItem.map( orderItem => orderItem.productId);
     const products : any[] = await firstValueFrom(
-      this.productsClient.send({ cmd: 'validate_product' }, productIds)
+      this.client.send({ cmd: 'validate_product' }, productIds)
     )
 
     return{
