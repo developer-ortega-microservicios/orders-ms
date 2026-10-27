@@ -9,4 +9,7 @@ node_modules/
 
 postgres/
 
+.claude/
+.agents/
+
 .git/
