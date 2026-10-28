@@ -8,6 +8,7 @@ import { PrismaClient } from '../generated/prisma/client.js';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
+import { OrderWithProducts } from './interfaces/order-with-products.interface.js';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -172,6 +173,23 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       data: { status: status }
     })
 
+  }
+
+  async createPaymentSession( order: OrderWithProducts){
+    const paymentSession = await firstValueFrom(
+      this.client.send(
+        'create.payment.session', {
+          orderId: order.id,
+          currency: "usd",
+          items: [
+            {
+              
+            }
+          ]
+        })
+    )
+
+    return paymentSession;
   }
 
 
