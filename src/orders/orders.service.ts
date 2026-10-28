@@ -9,6 +9,7 @@ import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
 import { OrderWithProducts } from './interfaces/order-with-products.interface.js';
+import { PaidOrderDto } from './dto/paid-order.dto.js';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -191,6 +192,30 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     return paymentSession;
   }
+
+  async paidOrder ( paidOrderDto: PaidOrderDto ) {
+    this.logger.log('Paid Order')
+
+    const order = await this.order.update({
+      where: { id: paidOrderDto.orderId },
+      data: {
+        status: 'PAID',
+        paid: true,
+        paidAt: new Date(),
+        stripeChargeId: paidOrderDto.stripePaymentId,
+
+        orderReceipts: {
+          upsert: {
+            create: { receiptUrl: paidOrderDto.receiptUrl },
+            update: { receiptUrl: paidOrderDto.receiptUrl }
+          }
+        }
+      }
+    })
+
+    return order;
+
+  } 
 
 
 }

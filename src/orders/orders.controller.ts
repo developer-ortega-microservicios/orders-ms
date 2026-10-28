@@ -4,6 +4,7 @@ import { ChangeOrderStatusDto } from './dto/change-order-status.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderPaginationDto } from './dto/order-pagination.dto.js';
 import { OrdersService } from './orders.service.js';
+import { PaidOrderDto } from './dto/paid-order.dto.js';
 
 @Controller()
 export class OrdersController {
@@ -38,8 +39,7 @@ export class OrdersController {
   }
 
   @EventPattern('payment.succeeded')
-  paidOrder(@Payload() paidOrderDto: any){
-    console.log({ paidOrderDto })
-    return;
+  paidOrder(@Payload() paidOrderDto: PaidOrderDto){
+    return this.ordersService.paidOrder(paidOrderDto)
   }
 }
